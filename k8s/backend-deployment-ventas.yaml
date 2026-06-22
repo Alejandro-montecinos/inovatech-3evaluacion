@@ -18,10 +18,9 @@ spec:
           image: 042379109745.dkr.ecr.us-east-1.amazonaws.com/ecr-backend-ventas-inovatech:eks-v1
           ports:
             - containerPort: 8082
-
           env:
             - name: DB_IP_PRIVADA
-              value: "10.0.10.61"
+              value: "tienda-db"
             - name: DB_PORT
               value: "3306"
             - name: DB_NAME
@@ -30,7 +29,6 @@ spec:
               value: "alumno"
             - name: DB_PASSWORD
               value: "alumno123"
-
           resources:
             requests:
               cpu: "100m"
@@ -38,30 +36,15 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
-
-          startupProbe:
+          readinessProbe:
             httpGet:
               path: /api/health
               port: 8082
             initialDelaySeconds: 20
             periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 18
-
-          readinessProbe:
-            httpGet:
-              path: /api/health
-              port: 8082
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 6
-
           livenessProbe:
             httpGet:
               path: /api/health
               port: 8082
-            initialDelaySeconds: 30
+            initialDelaySeconds: 40
             periodSeconds: 15
-            timeoutSeconds: 2
-            failureThreshold: 6

@@ -58,32 +58,48 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd frontend
-          docker build -t $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG} .
+          docker build \
+            -t $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG} \
+            -t $ECR_REGISTRY/${ECR_REPO_FRONTEND}:eks-v1 \
+            .
           docker push $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG}
+          docker push $ECR_REGISTRY/${ECR_REPO_FRONTEND}:eks-v1
 
       - name: Build & push BACKEND VENTAS
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd backend/back-Ventas_SpringBoot/Springboot-API-REST
-          docker build -t $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG} .
+          docker build \
+            -t $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG} \
+            -t $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:eks-v1 \
+            .
           docker push $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG}
+          docker push $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:eks-v1
 
       - name: Build & push BACKEND DESPACHO
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           cd backend/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
-          docker build -t $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:${IMAGE_TAG} .
+          docker build \
+            -t $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:${IMAGE_TAG} \
+            -t $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:eks-v1 \
+            .
           docker push $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:${IMAGE_TAG}
+          docker push $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:eks-v1
 
       - name: Build & push DB
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          cd db
-          docker build -t $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG} .
-          docker push $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG}
+          run: |
+            cd db
+            docker build \
+              -t $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG} \
+              -t $ECR_REGISTRY/${ECR_REPO_DB}:eks-v1 \
+              .
+            docker push $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG}
+            docker push $ECR_REGISTRY/${ECR_REPO_DB}:eks-v1
 
       - name: Instalar kubectl
         uses: azure/setup-kubectl@v4
@@ -117,7 +133,7 @@ jobs:
           kubectl apply -f k8s/backend-deployment-ventas.yaml -n $EKS_NAMESPACE
           kubectl apply -f k8s/backend-service-ventas.yaml -n $EKS_NAMESPACE
           kubectl set image deployment/tienda-backend-ventas \
-            backend=$ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG} \
+            backend=$ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:eks-v1 \
             -n $EKS_NAMESPACE
           kubectl rollout status deployment/tienda-backend-ventas -n $EKS_NAMESPACE
 
@@ -126,10 +142,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
         run: |
-          kubectl apply -f k8s/backend-deployment.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/backend-service.yaml -n $EKS_NAMESPACE
+          kubectl apply -f k8s/backend-deployment-despacho.yaml -n $EKS_NAMESPACE
+          kubectl apply -f k8s/backend-service-despacho.yaml -n $EKS_NAMESPACE
           kubectl set image deployment/tienda-backend-despacho \
-            backend=$ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:${IMAGE_TAG} \
+            backend=$ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:eks-v1 \
             -n $EKS_NAMESPACE
           kubectl rollout status deployment/tienda-backend-despacho -n $EKS_NAMESPACE
 
@@ -141,16 +157,27 @@ jobs:
           kubectl apply -f k8s/frontend-deployment.yaml -n $EKS_NAMESPACE
           kubectl apply -f k8s/frontend-service.yaml -n $EKS_NAMESPACE
           kubectl set image deployment/tienda-frontend \
-            frontend=$ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG} \
+            frontend=$ECR_REGISTRY/${ECR_REPO_FRONTEND}:eks-v1 \
             -n $EKS_NAMESPACE
           kubectl rollout status deployment/tienda-frontend -n $EKS_NAMESPACE
 
+      - name: Actualizar DB en EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+        run: |
+          kubectl apply -f k8s/mysql-deployment.yaml -n $EKS_NAMESPACE
+          kubectl apply -f k8s/mysql-service.yaml -n $EKS_NAMESPACE
+          kubectl set image deployment/tienda-db \
+            mysql=$ECR_REGISTRY/${ECR_REPO_DB}:eks-v1 \
+            -n $EKS_NAMESPACE
+          kubectl rollout status deployment/tienda-db -n $EKS_NAMESPACE
       - name: Aplicar HPA
         env:
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
         run: |
           if [ -f k8s/backend-hpa-ventas.yaml ]; then kubectl apply -f k8s/backend-hpa-ventas.yaml -n $EKS_NAMESPACE; fi
-          if [ -f k8s/backend-hpa.yaml ]; then kubectl apply -f k8s/backend-hpa.yaml -n $EKS_NAMESPACE; fi
+          if [ -f k8s/backend-hpa-despacho.yaml ]; then kubectl apply -f k8s/backend-hpa-despacho.yaml -n $EKS_NAMESPACE; fi
           if [ -f k8s/frontend-hpa.yaml ]; then kubectl apply -f k8s/frontend-hpa.yaml -n $EKS_NAMESPACE; fi
 
       - name: Ver estado final

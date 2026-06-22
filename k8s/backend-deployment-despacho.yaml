@@ -19,19 +19,16 @@ spec:
           ports:
             - containerPort: 8081
           env:
-            - name: DB_HOST
-              value: "tienda-db"
-            - name: DB_USER
-              value: "root"
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_ROOT_PASSWORD
-            - name: DB_NAME
-              value: "tienda_perritos"
+            - name: DB_IP_PRIVADA
+              value: "10.0.10.61"
             - name: DB_PORT
               value: "3306"
+            - name: DB_NAME
+              value: "despacho"
+            - name: DB_USERNAME
+              value: "alumno"
+            - name: DB_PASSWORD
+              value: "alumno123"
           resources:
             requests:
               cpu: "100m"

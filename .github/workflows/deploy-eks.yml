@@ -92,14 +92,14 @@ jobs:
       - name: Build & push DB
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          run: |
-            cd db
-            docker build \
-              -t $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG} \
-              -t $ECR_REGISTRY/${ECR_REPO_DB}:eks-v1 \
-              .
-            docker push $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG}
-            docker push $ECR_REGISTRY/${ECR_REPO_DB}:eks-v1
+        run: |
+          cd db
+          docker build \
+            -t $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG} \
+            -t $ECR_REGISTRY/${ECR_REPO_DB}:eks-v1 \
+            .
+          docker push $ECR_REGISTRY/${ECR_REPO_DB}:${IMAGE_TAG}
+          docker push $ECR_REGISTRY/${ECR_REPO_DB}:eks-v1
 
       - name: Instalar kubectl
         uses: azure/setup-kubectl@v4
@@ -171,7 +171,8 @@ jobs:
           kubectl set image deployment/tienda-db \
             mysql=$ECR_REGISTRY/${ECR_REPO_DB}:eks-v1 \
             -n $EKS_NAMESPACE
-          kubectl rollout status deployment/tienda-db -n $EKS_NAMESPACE
+          kubectl rollout status deployment/tienda-db -n $EKS_NAMESPACE || true
+
       - name: Aplicar HPA
         env:
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}

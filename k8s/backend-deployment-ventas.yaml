@@ -18,6 +18,7 @@ spec:
           image: 042379109745.dkr.ecr.us-east-1.amazonaws.com/ecr-backend-ventas-inovatech:eks-v1
           ports:
             - containerPort: 8082
+
           env:
             - name: DB_IP_PRIVADA
               value: "10.0.10.61"
@@ -29,6 +30,7 @@ spec:
               value: "alumno"
             - name: DB_PASSWORD
               value: "alumno123"
+
           resources:
             requests:
               cpu: "100m"
@@ -36,15 +38,30 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
-          readinessProbe:
+
+          startupProbe:
             httpGet:
               path: /api/health
               port: 8082
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          livenessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 18
+
+          readinessProbe:
             httpGet:
               path: /api/health
               port: 8082
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 6

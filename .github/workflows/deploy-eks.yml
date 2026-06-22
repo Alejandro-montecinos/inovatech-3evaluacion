@@ -3,7 +3,7 @@ name: CI/CD Inovatech EKS
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 env:
   ECR_REPO_FRONTEND: ecr-frontend-inovatech
@@ -18,6 +18,13 @@ jobs:
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
 
       - name: Configurar credenciales AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -34,11 +41,23 @@ jobs:
       - name: Definir tag de imagen
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
+      - name: Build JAR BACKEND VENTAS
+        run: |
+          cd backend/back-Ventas_SpringBoot/Springboot-API-REST
+          chmod +x mvnw || true
+          ./mvnw clean package -DskipTests
+
+      - name: Build JAR BACKEND DESPACHO
+        run: |
+          cd backend/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+          chmod +x mvnw || true
+          ./mvnw clean package -DskipTests
+
       - name: Build & push FRONTEND
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          cd frontend
+          cd front_despacho
           docker build -t $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG} .
           docker push $ECR_REGISTRY/${ECR_REPO_FRONTEND}:${IMAGE_TAG}
 
@@ -46,7 +65,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          cd backend-ventas
+          cd backend/back-Ventas_SpringBoot/Springboot-API-REST
           docker build -t $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG} .
           docker push $ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG}
 
@@ -54,7 +73,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          cd backend-despacho
+          cd backend/back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
           docker build -t $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:${IMAGE_TAG} .
           docker push $ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:${IMAGE_TAG}
 

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tienda-backend-ventas
+  namespace: inovatech
+spec:
+  selector:
+    app: tienda-backend-ventas
+  ports:
+    - port: 8082
+      targetPort: 8082
+  type: ClusterIP

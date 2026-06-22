@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tienda-backend-despacho
+  namespace: inovatech
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tienda-backend-despacho
+  template:
+    metadata:
+      labels:
+        app: tienda-backend-despacho
+    spec:
+      containers:
+        - name: backend
+          image: 042379109745.dkr.ecr.us-east-1.amazonaws.com/ecr-backend-despacho-inovatech:eks-v1
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DB_HOST
+              value: "tienda-db"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: DB_NAME
+              value: "tienda_perritos"
+            - name: DB_PORT
+              value: "3306"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 10

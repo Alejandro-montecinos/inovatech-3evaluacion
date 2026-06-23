@@ -24,7 +24,7 @@ spec:
             - name: DB_PORT
               value: "3306"
             - name: DB_NAME
-              value: "ventas"
+              value: "despacho"
             - name: DB_USERNAME
               value: "alumno"
             - name: DB_PASSWORD

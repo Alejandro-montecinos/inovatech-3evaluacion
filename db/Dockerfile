@@ -1,8 +1,8 @@
-
 FROM mysql:8
 
-ENV MYSQL_ROOT_PASSWORD=admin123
-ENV MYSQL_DATABASE=despacho
+# Variables con valores por defecto - serán sobreescritas por el K8s secret (db-secret)
+ENV MYSQL_ROOT_PASSWORD=alumno123
+ENV MYSQL_DATABASE=tienda
 ENV MYSQL_USER=alumno
 ENV MYSQL_PASSWORD=alumno123
 

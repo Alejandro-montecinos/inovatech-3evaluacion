@@ -119,26 +119,29 @@ jobs:
       - name: Aplicar manifests base (Base de Datos)
         env:
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
-          DB_IP_PRIVADA: ${{ secrets.DB_IP_PRIVADA || 'tienda-db' }}
+          DB_IP_PRIVADA: tienda-db
           DB_PORT: ${{ secrets.DB_PORT || '3306' }}
-          DB_NAME: ${{ secrets.DB_NAME || 'despacho' }}
+          DB_NAME: ${{ secrets.DB_NAME || 'tienda' }}
           DB_USERNAME: ${{ secrets.DB_USERNAME || 'alumno' }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'alumno123' }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPO_DB: ${{ env.ECR_REPO_DB }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           # Crear Namespace si no existe
           envsubst < k8s/namespace.yaml | kubectl apply -f -
-          
-          # Crear Secreto de Conexión a la BD
+
+          # Crear Secreto de Conexión a la BD (tienda-db = servicio K8s MySQL)
           envsubst < k8s/db-secret.yaml | kubectl apply -f -
-          
-          if [ "$DB_IP_PRIVADA" = "tienda-db" ]; then
-            echo "Utilizando base de datos local en EKS (tienda-db)..."
-            kubectl apply -f k8s/mysql-secret.yaml -n $EKS_NAMESPACE
-            envsubst < k8s/mysql-deployment.yaml | kubectl apply -f -
-            envsubst < k8s/mysql-service.yaml | kubectl apply -f -
-          else
-            echo "Utilizando base de datos externa en EC2/RDS ($DB_IP_PRIVADA). Omitiendo base de datos interna."
-          fi
+
+          # Desplegar MySQL dentro de EKS
+          echo "Desplegando MySQL dentro de EKS como pod (tienda-db)..."
+          envsubst < k8s/mysql-deployment.yaml | kubectl apply -f -
+          envsubst < k8s/mysql-service.yaml | kubectl apply -f -
+
+          # Esperar a que MySQL esté listo antes de desplegar backends
+          echo "Esperando que MySQL esté listo..."
+          kubectl rollout status deployment/tienda-db -n $EKS_NAMESPACE --timeout=120s
 
       - name: Actualizar BACKEND VENTAS en EKS
         env:

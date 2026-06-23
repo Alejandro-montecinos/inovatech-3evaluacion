@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tienda-frontend
-  namespace: inovatech
+  namespace: ${EKS_NAMESPACE}
 spec:
   replicas: 2
   selector:
@@ -15,11 +15,18 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 042379109745.dkr.ecr.us-east-1.amazonaws.com/ecr-frontend-inovatech:eks-v1
+          image: ${ECR_REGISTRY}/${ECR_REPO_FRONTEND}:${IMAGE_TAG}
           ports:
             - containerPort: 80
-
-          # Se agrega Resource para que Metrics Server calcule el % de CPU y Memoria para escalar 
+          env:
+            - name: BACKEND_VENTAS_HOST
+              value: "tienda-backend-ventas"
+            - name: BACKEND_VENTAS_PORT
+              value: "8082"
+            - name: BACKEND_DESPACHO_HOST
+              value: "tienda-backend-despacho"
+            - name: BACKEND_DESPACHO_PORT
+              value: "8081"
           resources:
             requests:
               cpu: "50m"

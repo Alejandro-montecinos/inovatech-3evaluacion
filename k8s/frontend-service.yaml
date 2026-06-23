@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tienda-frontend
-  namespace: inovatech
+  namespace: ${EKS_NAMESPACE}
   annotations:
     # Indicamos que el LB lo maneja el AWS Load Balancer Controller
     service.beta.kubernetes.io/aws-load-balancer-type: "external"

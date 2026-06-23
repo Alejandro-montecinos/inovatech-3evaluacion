@@ -116,70 +116,70 @@ jobs:
             --name $EKS_CLUSTER_NAME
           kubectl config current-context
 
-      - name: Aplicar manifests base
+      - name: Aplicar manifests base (Base de Datos)
         env:
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
+          DB_IP_PRIVADA: ${{ secrets.DB_IP_PRIVADA || 'tienda-db' }}
+          DB_PORT: ${{ secrets.DB_PORT || '3306' }}
+          DB_NAME: ${{ secrets.DB_NAME || 'despacho' }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME || 'alumno' }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'alumno123' }}
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/mysql-secret.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/mysql-deployment.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/mysql-service.yaml -n $EKS_NAMESPACE
+          # Crear Namespace si no existe
+          envsubst < k8s/namespace.yaml | kubectl apply -f -
+          
+          # Crear Secreto de Conexión a la BD
+          envsubst < k8s/db-secret.yaml | kubectl apply -f -
+          
+          if [ "$DB_IP_PRIVADA" = "tienda-db" ]; then
+            echo "Utilizando base de datos local en EKS (tienda-db)..."
+            kubectl apply -f k8s/mysql-secret.yaml -n $EKS_NAMESPACE
+            envsubst < k8s/mysql-deployment.yaml | kubectl apply -f -
+            envsubst < k8s/mysql-service.yaml | kubectl apply -f -
+          else
+            echo "Utilizando base de datos externa en EC2/RDS ($DB_IP_PRIVADA). Omitiendo base de datos interna."
+          fi
 
       - name: Actualizar BACKEND VENTAS en EKS
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPO_BACKEND_VENTAS: ${{ env.ECR_REPO_BACKEND_VENTAS }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
         run: |
-          kubectl apply -f k8s/backend-deployment-ventas.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/backend-service-ventas.yaml -n $EKS_NAMESPACE
-          kubectl set image deployment/tienda-backend-ventas \
-            backend=$ECR_REGISTRY/${ECR_REPO_BACKEND_VENTAS}:eks-v1 \
-            -n $EKS_NAMESPACE
+          envsubst < k8s/backend-deployment-ventas.yaml | kubectl apply -f -
+          envsubst < k8s/backend-service-ventas.yaml | kubectl apply -f -
           kubectl rollout status deployment/tienda-backend-ventas -n $EKS_NAMESPACE
 
       - name: Actualizar BACKEND DESPACHO en EKS
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPO_BACKEND_DESPACHO: ${{ env.ECR_REPO_BACKEND_DESPACHO }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
         run: |
-          kubectl apply -f k8s/backend-deployment-despacho.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/backend-service-despacho.yaml -n $EKS_NAMESPACE
-          kubectl set image deployment/tienda-backend-despacho \
-            backend=$ECR_REGISTRY/${ECR_REPO_BACKEND_DESPACHO}:eks-v1 \
-            -n $EKS_NAMESPACE
+          envsubst < k8s/backend-deployment-despacho.yaml | kubectl apply -f -
+          envsubst < k8s/backend-service-despacho.yaml | kubectl apply -f -
           kubectl rollout status deployment/tienda-backend-despacho -n $EKS_NAMESPACE
 
       - name: Actualizar FRONTEND en EKS
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPO_FRONTEND: ${{ env.ECR_REPO_FRONTEND }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
         run: |
-          kubectl apply -f k8s/frontend-deployment.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/frontend-service.yaml -n $EKS_NAMESPACE
-          kubectl set image deployment/tienda-frontend \
-            frontend=$ECR_REGISTRY/${ECR_REPO_FRONTEND}:eks-v1 \
-            -n $EKS_NAMESPACE
+          envsubst < k8s/frontend-deployment.yaml | kubectl apply -f -
+          envsubst < k8s/frontend-service.yaml | kubectl apply -f -
           kubectl rollout status deployment/tienda-frontend -n $EKS_NAMESPACE
-
-      - name: Actualizar DB en EKS
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
-        run: |
-          kubectl apply -f k8s/mysql-deployment.yaml -n $EKS_NAMESPACE
-          kubectl apply -f k8s/mysql-service.yaml -n $EKS_NAMESPACE
-          kubectl set image deployment/tienda-db \
-            mysql=$ECR_REGISTRY/${ECR_REPO_DB}:eks-v1 \
-            -n $EKS_NAMESPACE
-          kubectl rollout status deployment/tienda-db -n $EKS_NAMESPACE || true
 
       - name: Aplicar HPA
         env:
           EKS_NAMESPACE: ${{ secrets.EKS_NAMESPACE }}
         run: |
-          if [ -f k8s/backend-hpa-ventas.yaml ]; then kubectl apply -f k8s/backend-hpa-ventas.yaml -n $EKS_NAMESPACE; fi
-          if [ -f k8s/backend-hpa-despacho.yaml ]; then kubectl apply -f k8s/backend-hpa-despacho.yaml -n $EKS_NAMESPACE; fi
-          if [ -f k8s/frontend-hpa.yaml ]; then kubectl apply -f k8s/frontend-hpa.yaml -n $EKS_NAMESPACE; fi
+          if [ -f k8s/backend-hpa-ventas.yaml ]; then envsubst < k8s/backend-hpa-ventas.yaml | kubectl apply -f -; fi
+          if [ -f k8s/backend-hpa-despacho.yaml ]; then envsubst < k8s/backend-hpa-despacho.yaml | kubectl apply -f -; fi
+          if [ -f k8s/frontend-hpa.yaml ]; then envsubst < k8s/frontend-hpa.yaml | kubectl apply -f -; fi
 
       - name: Ver estado final
         env:

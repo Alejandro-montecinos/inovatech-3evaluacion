@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tienda-backend-ventas
-  namespace: inovatech
+  namespace: ${EKS_NAMESPACE}
 spec:
   replicas: 2
   selector:
@@ -15,20 +15,35 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 042379109745.dkr.ecr.us-east-1.amazonaws.com/ecr-backend-ventas-inovatech:eks-v1
+          image: ${ECR_REGISTRY}/${ECR_REPO_BACKEND_VENTAS}:${IMAGE_TAG}
           ports:
             - containerPort: 8082
           env:
             - name: DB_IP_PRIVADA
-              value: "tienda-db"
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_IP_PRIVADA
             - name: DB_PORT
-              value: "3306"
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PORT
             - name: DB_NAME
-              value: "despacho"
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_NAME
             - name: DB_USERNAME
-              value: "alumno"
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USERNAME
             - name: DB_PASSWORD
-              value: "alumno123"
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
           resources:
             requests:
               cpu: "100m"

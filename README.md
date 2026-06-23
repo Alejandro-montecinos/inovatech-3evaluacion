@@ -205,25 +205,6 @@ El cluster tiene configurado **Horizontal Pod Autoscaler** para los tres compone
 
 ---
 
-## 🔒 Secrets de GitHub
-
-Para que el pipeline funcione, configura los siguientes secrets en el repositorio:
-
-| Secret | Descripción |
-|--------|-----------|
-| `AWS_ACCESS_KEY_ID` | Access Key de AWS |
-| `AWS_SECRET_ACCESS_KEY` | Secret Access Key de AWS |
-| `AWS_SESSION_TOKEN` | Token de sesión (si aplica) |
-| `AWS_REGION` | Región AWS (ej: `us-east-1`) |
-| `EKS_CLUSTER_NAME` | Nombre del cluster EKS |
-| `EKS_NAMESPACE` | Namespace de Kubernetes |
-| `DB_PORT` | Puerto de MySQL (default: `3306`) |
-| `DB_NAME` | Nombre de la base de datos (default: `tienda`) |
-| `DB_USERNAME` | Usuario de MySQL (default: `alumno`) |
-| `DB_PASSWORD` | Contraseña de MySQL (default: `alumno123`) |
-
----
-
 ## 🛠️ Desarrollo Local
 
 ### Prerrequisitos

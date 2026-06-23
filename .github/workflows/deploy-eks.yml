@@ -134,11 +134,7 @@ jobs:
           # Crear Secreto de Conexión a la BD (tienda-db = servicio K8s MySQL)
           envsubst < k8s/db-secret.yaml | kubectl apply -f -
 
-          # Crear PVC para persistencia de datos MySQL (solo crea si no existe, nunca borra)
-          echo "Aplicando PersistentVolumeClaim para MySQL..."
-          envsubst < k8s/mysql-pvc.yaml | kubectl apply -f -
-
-          # Desplegar MySQL dentro de EKS (apply es idempotente: actualiza imagen sin borrar datos)
+          # Desplegar MySQL dentro de EKS (los datos se inicializan via init.sql en la imagen)
           echo "Desplegando MySQL dentro de EKS como pod (tienda-db)..."
           envsubst < k8s/mysql-deployment.yaml | kubectl apply -f -
           envsubst < k8s/mysql-service.yaml | kubectl apply -f -

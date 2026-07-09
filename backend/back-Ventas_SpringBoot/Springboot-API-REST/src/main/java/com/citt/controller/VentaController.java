@@ -13,7 +13,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-
+// esto es un test
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("api/v1/ventas")
